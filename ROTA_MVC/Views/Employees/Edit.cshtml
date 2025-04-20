@@ -1,0 +1,95 @@
+﻿@model ROTA_MVC.Models.UpdateEmployeeDto 
+
+@{
+    ViewData["Title"] = "Edit Employee";
+    // Get the employee ID from the route data if needed for display/context
+    var employeeId = ViewContext.RouteData.Values["id"];
+}
+
+@* Page Header *@
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">@ViewData["Title"]</h1>
+    <div>
+         <a asp-action="Index" class="btn btn-sm btn-outline-secondary">
+             <i class="bi bi-arrow-left me-1"></i> Back to Employee List
+         </a>
+         @* Optional link to Details page for this employee *@
+         @* <a asp-action="Details" asp-route-id="@employeeId" class="btn btn-sm btn-outline-info ms-2">
+              <i class="bi bi-info-circle me-1"></i> View Details
+           </a> *@
+    </div>
+</div>
+
+
+<div class="row justify-content-center">
+    <div class="col-md-8 col-lg-7 col-xl-6">
+        <div class="card shadow-sm mb-4">
+            <div class="card-header">
+                 <h4 class="mb-0">Update Employee Details</h4>
+            </div>
+            <div class="card-body p-4">
+                @* Form posts back to the Edit POST action, passing the ID from the route *@
+                <form asp-action="Edit" method="post" novalidate>
+                    @Html.AntiForgeryToken()
+                    <div asp-validation-summary="ModelOnly" class="alert alert-danger mb-3" role="alert"></div>
+                    @* ID is implicitly passed via the route parameter, no hidden field needed for ID itself unless model requires it *@
+
+                    <div class="row g-3">
+                        <div class="col-sm-6">
+                            <label asp-for="FirstName" class="form-label"></label>
+                            <input asp-for="FirstName" class="form-control" placeholder="Enter first name" />
+                            <span asp-validation-for="FirstName" class="text-danger small d-block mt-1"></span>
+                        </div>
+                        <div class="col-sm-6">
+                            <label asp-for="LastName" class="form-label"></label>
+                            <input asp-for="LastName" class="form-control" placeholder="Enter last name" />
+                            <span asp-validation-for="LastName" class="text-danger small d-block mt-1"></span>
+                        </div>
+
+                        <div class="col-12">
+                            <label asp-for="Email" class="form-label"></label>
+                            <input asp-for="Email" class="form-control" type="email" placeholder="name@example.com" />
+                            <span asp-validation-for="Email" class="text-danger small d-block mt-1"></span>
+                        </div>
+
+                        <div class="col-sm-6">
+                            <label asp-for="PhoneNumber" class="form-label"></label>
+                            <input asp-for="PhoneNumber" class="form-control" placeholder="(Optional)" />
+                            <span asp-validation-for="PhoneNumber" class="text-danger small d-block mt-1"></span>
+                        </div>
+
+                        <div class="col-sm-6">
+                            <label asp-for="TeamId" class="form-label">Assign Team</label>
+                            <select asp-for="TeamId" class="form-select" asp-items="ViewBag.TeamList">
+                                <option value="">-- Unassigned --</option>
+                            </select>
+                            <span asp-validation-for="TeamId" class="text-danger small d-block mt-1"></span>
+                        </div>
+
+                         <div class="col-12">
+                             <div class="form-check form-switch mt-2">
+                                <input class="form-check-input" type="checkbox" role="switch" asp-for="IsActive">
+                                <label class="form-check-label" asp-for="IsActive">Account is Active</label>
+                                <span asp-validation-for="IsActive" class="text-danger"></span>
+                            </div>
+                         </div>
+                    </div> @* End row for form fields *@
+
+                    <hr class="my-4">
+
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a asp-action="Index" class="btn btn-outline-secondary px-4">Cancel</a>
+                        <button type="submit" class="btn btn-primary px-4">
+                           <i class="bi bi-check-lg me-2"></i>Save Changes
+                        </button>
+                    </div>
+                </form>
+            </div> @* End Card Body *@
+        </div> @* End Card *@
+    </div> @* End Col *@
+</div> @* End Row *@
+
+
+@section Scripts {
+    @{ await Html.RenderPartialAsync("_ValidationScriptsPartial"); }
+}

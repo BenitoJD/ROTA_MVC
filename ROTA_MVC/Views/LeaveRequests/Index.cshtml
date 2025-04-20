@@ -1,0 +1,207 @@
+﻿@model IEnumerable<ROTA_MVC.Models.LeaveRequestDto>
+@using ROTA_MVC.Models
+@using System.Security.Claims
+
+@{
+    ViewData["Title"] = "Leave Requests";
+    DateTime startDate = ViewBag.StartDate ?? DateTime.UtcNow.Date.AddMonths(-1);
+    DateTime endDate = ViewBag.EndDate ?? DateTime.UtcNow.Date;
+    int? employeeIdFilter = ViewBag.EmployeeIdFilter;
+    int? teamIdFilter = ViewBag.TeamIdFilter;
+    int? leaveTypeIdFilter = ViewBag.LeaveTypeIdFilter;
+    LeaveStatus? statusFilter = ViewBag.StatusFilter;
+    bool isAdmin = User.IsInRole("Admin");
+}
+
+<style>
+    body {
+        background-color: #ffffff;
+        font-family: 'Arial', sans-serif;
+    }
+
+    .container {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+
+    .filter-form {
+        background-color: #f8f9fa;
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+
+    .table {
+        background-color: #ffffff;
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        overflow: hidden;
+    }
+
+        .table th, .table td {
+            padding: 12px;
+            vertical-align: middle;
+        }
+
+        .table thead {
+            background-color: #f1f3f5;
+            color: #343a40;
+        }
+
+    .btn-sm {
+        padding: 5px 10px;
+        font-size: 0.875rem;
+    }
+
+    .alert {
+        border-radius: 8px;
+        margin-bottom: 20px;
+    }
+
+    .badge {
+        font-size: 0.875rem;
+        padding: 5px 10px;
+    }
+</style>
+
+<div class="container">
+    <h1 class="mb-4">Leave Requests</h1>
+
+   
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger" role="alert">
+            @TempData["ErrorMessage"]
+        </div>
+    }
+
+    @* Filter Form *@
+    <form asp-action="Index" method="get" class="filter-form row g-3 align-items-end">
+        <div class="col-md-2">
+            <label for="startDate" class="form-label">Start Date</label>
+            <input type="date" id="startDate" name="startDate" value="@startDate.ToString("yyyy-MM-dd")" class="form-control form-control-sm" />
+        </div>
+        <div class="col-md-2">
+            <label for="endDate" class="form-label">End Date</label>
+            <input type="date" id="endDate" name="endDate" value="@endDate.ToString("yyyy-MM-dd")" class="form-control form-control-sm" />
+        </div>
+
+        @if (isAdmin)
+        {
+            <div class="col-md-2">
+                <label for="employeeId" class="form-label">Employee</label>
+                <select id="employeeId" name="employeeId" asp-items="ViewBag.EmployeeList" class="form-select form-select-sm">
+                    <option value="">-- All Employees --</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label for="teamId" class="form-label">Team</label>
+                <select id="teamId" name="teamId" asp-items="ViewBag.TeamList" class="form-select form-select-sm">
+                    <option value="">-- All Teams --</option>
+                </select>
+            </div>
+        }
+        else
+        {
+            <div class="col-md-2"></div>
+            <div class="col-md-2"></div>
+            <input type="hidden" name="employeeId" />
+            <input type="hidden" name="teamId" />
+        }
+
+        <div class="col-md-2">
+            <label for="leaveTypeId" class="form-label">Leave Type</label>
+            <select id="leaveTypeId" name="leaveTypeId" asp-items="ViewBag.LeaveTypeList" class="form-select form-select-sm">
+                <option value="">-- All Types --</option>
+            </select>
+        </div>
+        <div class="col-md-2">
+            <label for="status" class="form-label">Status</label>
+            <select id="status" name="status" asp-items="ViewBag.StatusList" class="form-select form-select-sm">
+                <option value="">-- All Statuses --</option>
+            </select>
+        </div>
+
+        <div class="col-md-12 text-end mt-2">
+            <button type="submit" class="btn btn-info btn-sm">Filter Requests</button>
+            <a asp-action="Index" class="btn btn-secondary btn-sm">Clear Filters</a>
+        </div>
+    </form>
+
+    <p>
+        <a asp-action="Create" class="btn btn-primary btn-sm mb-2">Request New Leave</a>
+    </p>
+
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                @if (isAdmin)
+                {
+                    <th>Employee</th>
+                    <th>Team</th>
+                }
+                <th>Type</th>
+                <th>Start</th>
+                <th>End</th>
+                <th>Requested</th>
+                <th>Status</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (!Model.Any())
+            {
+                <tr><td colspan="@(isAdmin ? 8 : 6)" class="text-center">No leave requests found for the selected criteria.</td></tr>
+            }
+            @foreach (var item in Model)
+            {
+                <tr>
+                    @if (isAdmin)
+                    {
+                        <td>@Html.DisplayFor(modelItem => item.EmployeeFullName)</td>
+                        <td>@Html.DisplayFor(modelItem => item.TeamName)</td>
+                    }
+                    <td>@Html.DisplayFor(modelItem => item.LeaveTypeName)</td>
+                    <td>@item.LeaveStartDateTime.ToString("g")</td>
+                    <td>@item.LeaveEndDateTime.ToString("g")</td>
+                    <td>@item.RequestedDate.ToLocalTime().ToString("g")</td>
+                    <td>
+                        @{
+                            string badgeClass = item.Status switch
+                            {
+                                LeaveStatus.Approved => "bg-success",
+                                LeaveStatus.Rejected => "bg-danger",
+                                LeaveStatus.Pending => "bg-warning text-dark",
+                                LeaveStatus.Cancelled => "bg-secondary",
+                                _ => "bg-light text-dark"
+                            };
+                        }
+                        <span class="badge @badgeClass">@item.StatusString</span>
+                    </td>
+                    <td>
+                        @{
+                            int currentUserEmployeeId = ViewBag.CurrentUserEmployeeId ?? -1;
+                            bool canUserCancel = (item.Status == LeaveStatus.Pending || item.Status == LeaveStatus.Approved) &&
+                            (isAdmin || currentUserEmployeeId == item.EmployeeId);
+                        }
+
+                        <a asp-action="Details" asp-route-id="@item.LeaveRequestId" class="btn btn-sm btn-info" title="View Details">Details</a>
+
+                        @if (isAdmin && item.Status == LeaveStatus.Pending)
+                        {
+                            <a asp-action="Approve" asp-route-id="@item.LeaveRequestId" class="btn btn-sm btn-success ms-1" title="Approve Request">Approve</a>
+                            <a asp-action="Reject" asp-route-id="@item.LeaveRequestId" class="btn btn-sm btn-danger ms-1" title="Reject Request">Reject</a>
+                        }
+
+                        @if (canUserCancel)
+                        {
+                            <a asp-action="Cancel" asp-route-id="@item.LeaveRequestId" class="btn btn-sm btn-outline-danger ms-1" title="Cancel Request">Cancel</a>
+                        }
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>

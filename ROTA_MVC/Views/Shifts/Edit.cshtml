@@ -1,0 +1,89 @@
+﻿@model ROTA_MVC.Models.UpdateShiftDto 
+
+@{
+    ViewData["Title"] = "Edit Shift Assignment";
+    var shiftId = ViewContext.RouteData.Values["id"]; // Get ID for links if needed
+}
+
+@* --- Page Header --- *@
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">@ViewData["Title"]</h1>
+     <div>
+         <a asp-action="Index" class="btn btn-sm btn-outline-secondary">
+             <i class="bi bi-arrow-left me-1"></i> Back to Shift List
+         </a>
+          <a asp-action="Details" asp-route-id="@shiftId" class="btn btn-sm btn-outline-info ms-2"> @* Link back to Details *@
+             <i class="bi bi-info-circle me-1"></i> View Details
+         </a>
+          <a asp-action="Calendar" class="btn btn-sm btn-outline-secondary ms-1">
+             <i class="bi bi-calendar-week me-1"></i> Calendar View
+         </a>
+    </div>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-md-8 col-lg-7 col-xl-6">
+        <div class="card shadow-sm mb-4">
+             <div class="card-header">
+                 <h4 class="mb-0"><i class="bi bi-pencil-square me-2 text-primary"></i>Update Shift Details</h4>
+            </div>
+            <div class="card-body p-4">
+                <form asp-action="Edit" method="post" novalidate>
+                    @Html.AntiForgeryToken()
+                    <div asp-validation-summary="ModelOnly" class="alert alert-danger mb-3" role="alert"></div>
+                    @* ID is implicitly passed via the route parameter *@
+
+                    <div class="mb-3">
+                        <label asp-for="EmployeeId" class="form-label fw-medium">Assign To Employee</label>
+                        <select asp-for="EmployeeId" class="form-select" asp-items="ViewBag.EmployeeId">
+                            <option value="">-- Select Employee --</option>
+                        </select>
+                        <span asp-validation-for="EmployeeId" class="text-danger small d-block mt-1"></span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="ShiftTypeId" class="form-label fw-medium">Shift Type</label>
+                        <select asp-for="ShiftTypeId" class="form-select" asp-items="ViewBag.ShiftTypeId">
+                             <option value="">-- Select Type (Optional) --</option>
+                        </select>
+                        <span asp-validation-for="ShiftTypeId" class="text-danger small d-block mt-1"></span>
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                         <div class="col-md-6">
+                            <label asp-for="ShiftStartDateTime" class="form-label fw-medium">Start Date & Time</label>
+                             @* Format value using the correct format string for datetime-local *@
+                            <input asp-for="ShiftStartDateTime" class="form-control" type="datetime-local" value="@Model.ShiftStartDateTime.ToString("yyyy-MM-ddTHH:mm:ss")"/>
+                            <span asp-validation-for="ShiftStartDateTime" class="text-danger small d-block mt-1"></span>
+                        </div>
+                         <div class="col-md-6">
+                            <label asp-for="ShiftEndDateTime" class="form-label fw-medium">End Date & Time</label>
+                            <input asp-for="ShiftEndDateTime" class="form-control" type="datetime-local" value="@Model.ShiftEndDateTime.ToString("yyyy-MM-ddTHH:mm:ss")"/>
+                            <span asp-validation-for="ShiftEndDateTime" class="text-danger small d-block mt-1"></span>
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label asp-for="Notes" class="form-label fw-medium">Notes</label>
+                        <textarea asp-for="Notes" class="form-control" rows="3" placeholder="(Optional) Update instructions for this shift"></textarea>
+                        <span asp-validation-for="Notes" class="text-danger small d-block mt-1"></span>
+                    </div>
+
+                    <hr class="my-4">
+
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a asp-action="Index" class="btn btn-outline-secondary px-4">Cancel</a>
+                        <button type="submit" class="btn btn-primary px-4">
+                           <i class="bi bi-check-lg me-2"></i>Save Changes
+                        </button>
+                    </div>
+                </form>
+            </div> @* End Card Body *@
+        </div> @* End Card *@
+    </div> @* End Col *@
+</div> @* End Row *@
+
+
+@section Scripts {
+    @{ await Html.RenderPartialAsync("_ValidationScriptsPartial"); }
+}

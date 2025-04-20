@@ -1,0 +1,81 @@
+﻿@model ROTA_MVC.Models.EmployeeDto 
+
+@{
+    ViewData["Title"] = $"Details: {Model.FirstName} {Model.LastName}";
+}
+
+@* Page Header *@
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">Employee Details</h1>
+     <div>
+         <a asp-action="Index" class="btn btn-sm btn-outline-secondary">
+             <i class="bi bi-arrow-left me-1"></i> Back to Employee List
+         </a>
+          @if (User.IsInRole("Admin"))
+          {
+              <a asp-action="Edit" asp-route-id="@Model?.EmployeeId" class="btn btn-sm btn-warning ms-2">
+                  <i class="bi bi-pencil-fill me-1"></i>Edit Employee
+              </a>
+          }
+    </div>
+</div>
+
+<div class="row justify-content-center"> @* Center content slightly *@
+    <div class="col-lg-10 col-xl-8"> @* Wider column for details *@
+        <div class="card shadow-sm mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                 <h4 class="mb-0">@Model.FirstName @Model.LastName</h4>
+                 @* Display Active/Inactive Status Badge in Header *@
+                 @if(Model.IsActive) { <span class="badge bg-success">Active</span> } else { <span class="badge bg-danger">Inactive</span> }
+            </div>
+            <div class="card-body p-4"> @* More padding *@
+
+                <h5 class="text-primary-emphasis mb-3">Contact Information</h5>
+                <dl class="row mb-4"> @* Definition List for Contact Info *@
+                    <dt class = "col-sm-3">Email</dt>
+                    <dd class = "col-sm-9">
+                        @if (!string.IsNullOrWhiteSpace(Model.Email)) {
+                            <a href="mailto:@Model.Email">@Model.Email</a>
+                        } else {
+                            <span class="text-muted">N/A</span>
+                        }
+                    </dd>
+
+                    <dt class = "col-sm-3">Phone Number</dt>
+                    <dd class = "col-sm-9">
+                        @(string.IsNullOrWhiteSpace(Model.PhoneNumber) ? Html.Raw("<span class='text-muted'>N/A</span>") : Model.PhoneNumber)
+                    </dd>
+                </dl>
+
+                <h5 class="text-primary-emphasis mb-3">Assignment Details</h5>
+                 <dl class="row mb-0"> @* Definition List for Assignment *@
+                    <dt class = "col-sm-3">Team</dt>
+                    <dd class = "col-sm-9">
+                         @(string.IsNullOrWhiteSpace(Model.TeamName) ? Html.Raw("<span class='text-muted'>Unassigned</span>") : Model.TeamName)
+                         @if(Model.TeamId.HasValue) { <small class="text-muted">(ID: @Model.TeamId.Value)</small> }
+                    </dd>
+
+                    <dt class = "col-sm-3">Employee ID</dt>
+                    <dd class = "col-sm-9">@Html.DisplayFor(model => model.EmployeeId)</dd>
+
+                    @* Add CreatedAt/UpdatedAt if available and useful *@
+                    @*
+                    <dt class = "col-sm-3">Record Created</dt>
+                    <dd class = "col-sm-9">@Model.CreatedAt.ToLocalTime().ToString("g")</dd>
+                    <dt class = "col-sm-3">Last Updated</dt>
+                    <dd class = "col-sm-9">@Model.UpdatedAt.ToLocalTime().ToString("g")</dd>
+                    *@
+                 </dl>
+
+            </div> @* End Card Body *@
+            <div class="card-footer text-end bg-light"> @* Footer for extra actions if needed *@
+                 @if (User.IsInRole("Admin"))
+                {
+                     <a asp-action="Delete" asp-route-id="@Model?.EmployeeId" class="btn btn-sm btn-outline-danger">
+                         <i class="bi bi-trash3 me-1"></i>Delete Employee...
+                     </a>
+                }
+            </div>
+        </div> @* End Card *@
+    </div> @* End Col *@
+</div> @* End Row *@

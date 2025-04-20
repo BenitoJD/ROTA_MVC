@@ -1,0 +1,128 @@
+﻿@model ROTA_MVC.ViewModels.LoginViewModel
+
+@{
+    ViewData["Title"] = "Sign In - ROTA Management";
+   
+}
+
+<style>
+    .login-page-container {
+        min-height: 80vh; /* Ensure container takes up significant height */
+        display: flex;
+        align-items: center; /* Vertically center content */
+        justify-content: center;
+        padding: 2rem 0; /* Add vertical padding */
+    }
+
+    .login-card {
+        max-width: 900px; /* Max width for the two-column card */
+        width: 100%;
+        overflow: hidden; /* Needed for split layout background */
+        border: none; /* Remove default card border if using split bg */
+        /* Use Material shadow from site.css */
+    }
+
+    .login-graphic-col {
+        background: linear-gradient(to bottom, rgba(102, 16, 242, 0.8), rgba(102, 16, 242, 0.95)), url('/images/login_background.jpg'); /* PRIMARY COLOR GRADIENT + IMAGE */
+        background-size: cover;
+        background-position: center;
+        color: white;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 3rem; /* More padding */
+        border-top-left-radius: var(--cred-border-radius, 12px); /* Match card radius */
+        border-bottom-left-radius: var(--cred-border-radius, 12px);
+    }
+
+    .login-form-col {
+        padding: 2.5rem 3rem; /* Generous padding for form */
+        background-color: var(--cred-surface, #ffffff); /* Ensure form side has surface color */
+        border-top-right-radius: var(--cred-border-radius, 12px); /* Match card radius */
+        border-bottom-right-radius: var(--cred-border-radius, 12px);
+    }
+
+    /* Responsive: Stack columns and adjust radius on smaller screens */
+    @@media (max-width: 991.98px) { /* Below Bootstrap lg breakpoint */
+        .login-graphic-col {
+            min-height: 250px; /* Give graphic some height */
+            border-radius: var(--cred-border-radius, 12px) var(--cred-border-radius, 12px) 0 0; /* Top corners rounded */
+        }
+        .login-form-col {
+             border-radius: 0 0 var(--cred-border-radius, 12px) var(--cred-border-radius, 12px); /* Bottom corners rounded */
+             padding: 2rem; /* Adjust padding */
+        }
+    }
+
+    .login-graphic-col h2 {
+        font-weight: 300; /* Lighter weight for graphic heading */
+    }
+    .login-graphic-col p {
+        opacity: 0.9;
+    }
+
+</style>
+
+<div class="container login-page-container">
+    <div class="card login-card shadow-lg"> @* Use larger shadow for emphasis *@
+        <div class="row g-0"> @* No gutters between columns *@
+
+            @* Graphic/Welcome Column (Visible on larger screens) *@
+            <div class="col-lg-6 d-none d-lg-flex login-graphic-col"> @* Hide on < LG screens *@
+                 <div class="text-center">
+                     <i class="bi bi-calendar-check mb-4" style="font-size: 4rem;"></i> @* Larger Icon *@
+                    <h2 class="mb-3">Streamline Your Schedule</h2>
+                    <p class="fs-6">Access the ROTA system to manage shifts, request leave, and stay organized.</p>
+                 </div>
+            </div>
+
+            @* Form Column *@
+            <div class="col-lg-6 login-form-col">
+                <div class="text-center mb-4 d-lg-none"> @* Show Icon/Title on small screens above form *@
+                     <i class="bi bi-person-circle mb-2" style="font-size: 3rem; color: var(--md-sys-color-primary);"></i>
+                     <h1 class="h3 mb-3 fw-normal">Sign In</h1>
+                 </div>
+                  <div class="text-center mb-4 d-none d-lg-block"> @* Show only title on large screens above form *@
+                     <h1 class="h3 mb-3 fw-normal">Account Login</h1>
+                 </div>
+
+
+                <form id="account" method="post" novalidate> @* Add novalidate to rely more on server-side/JS validation styling *@
+
+                    <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+                    @Html.AntiForgeryToken()
+
+                    <div class="form-floating mb-3">
+                        <input asp-for="Username" class="form-control" autocomplete="username" aria-required="true" placeholder="Username" />
+                        <label asp-for="Username" class="form-label"></label>
+                        <span asp-validation-for="Username" class="text-danger small"></span> @* Smaller validation text *@
+                    </div>
+
+                    <div class="form-floating mb-4"> @* Increased bottom margin *@
+                        <input asp-for="Password" type="password" class="form-control" autocomplete="current-password" aria-required="true" placeholder="Password" />
+                        <label asp-for="Password" class="form-label"></label>
+                        <span asp-validation-for="Password" class="text-danger small"></span>
+                    </div>
+
+                    <button id="login-submit" type="submit" class="w-100 btn btn-lg btn-primary py-3"> @* Taller button *@
+                       <i class="bi bi-box-arrow-in-right me-2"></i> Log In
+                    </button>
+
+                    <div class="mt-4 text-center text-body-secondary">
+                        <small>
+                            @* <a id="forgot-password" asp-action="ForgotPassword">Forgot password?</a> *@
+                        </small>
+                    </div>
+
+                </form>
+            </div> @* End Form Column *@
+
+        </div> @* End Row *@
+    </div> @* End Card *@
+</div> @* End Container *@
+
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

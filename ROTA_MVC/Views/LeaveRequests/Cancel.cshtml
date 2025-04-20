@@ -1,0 +1,79 @@
+﻿@model ROTA_MVC.Models.LeaveRequestDto 
+@using ROTA_MVC.Models 
+
+@{
+    ViewData["Title"] = "Confirm Cancellation";
+}
+
+@* Page Header *@
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">@ViewData["Title"]</h1>
+     <div>
+         <a asp-action="Index" class="btn btn-sm btn-outline-secondary">
+             <i class="bi bi-arrow-left me-1"></i> Back to Leave Requests
+         </a>
+    </div>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-md-8 col-lg-7 col-xl-6">
+        <div class="card shadow-sm mb-4 border-danger"> @* Use danger border for warning *@
+             <div class="card-header bg-danger text-white"> @* Danger header *@
+                 <h4 class="mb-0"><i class="bi bi-exclamation-octagon-fill me-2"></i>Cancel Leave Request</h4>
+            </div>
+            <div class="card-body p-4">
+                <p class="fs-5 text-danger fw-semibold">Are you sure you want to cancel this leave request?</p>
+                <p class="text-body-secondary">This will change the status to 'Cancelled'. Depending on system rules, this might be reversible by an administrator later, but the original approval (if any) will be removed.</p>
+
+                <hr class="my-3">
+
+                <h5 class="mb-3">Request Details:</h5>
+                <dl class="row mb-0">
+                     @if (User.IsInRole("Admin")) { @* Show Employee if Admin is viewing *@
+                        <dt class="col-sm-4">Employee</dt>
+                        <dd class="col-sm-8">@Model.EmployeeFullName</dd>
+                    }
+                    <dt class="col-sm-4">Leave Type</dt>
+                    <dd class="col-sm-8">@Model.LeaveTypeName</dd>
+
+                    <dt class="col-sm-4">Start Date/Time</dt>
+                    <dd class="col-sm-8">@Model.LeaveStartDateTime.ToLocalTime().ToString("f")</dd> @* Full format *@
+
+                    <dt class="col-sm-4">End Date/Time</dt>
+                    <dd class="col-sm-8">@Model.LeaveEndDateTime.ToLocalTime().ToString("f")</dd>
+
+                    <dt class="col-sm-4">Current Status</dt>
+                    <dd class="col-sm-8">
+                         @{ // Badge logic from Index view
+                            string badgeClass = Model.Status switch {
+                                LeaveStatus.Approved => "bg-success",
+                                LeaveStatus.Pending => "bg-warning text-dark",
+                                _ => "bg-secondary" // Should only be Pending or Approved here
+                            };
+                        }
+                        <span class="badge @badgeClass">@Model.StatusString</span>
+                    </dd>
+                     <dt class = "col-sm-4">Reason Provided</dt>
+                     <dd class = "col-sm-8">@(string.IsNullOrWhiteSpace(Model.Reason) ? Html.Raw("<span class='text-muted'>N/A</span>") : Model.Reason)</dd>
+                </dl>
+
+                <hr class="my-4">
+
+                @* Form POSTs to CancelConfirmed action *@
+                <form asp-action="Cancel" method="post">
+                    @* Pass the ID back via hidden input *@
+                    <input type="hidden" asp-for="LeaveRequestId" />
+                    @Html.AntiForgeryToken()
+
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                         <a asp-action="Index" class="btn btn-outline-secondary px-4">Do Not Cancel</a>
+                         <button type="submit" class="btn btn-danger px-4">
+                             <i class="bi bi-x-circle-fill me-2"></i>Yes, Cancel Request
+                        </button>
+                    </div>
+                </form>
+
+            </div> @* End Card Body *@
+        </div> @* End Card *@
+    </div> @* End Col *@
+</div> @* End Row *@

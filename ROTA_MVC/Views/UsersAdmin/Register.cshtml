@@ -1,0 +1,89 @@
+﻿@model ROTA_MVC.Models.RegisterUserDto
+
+@{
+    ViewData["Title"] = "Register New User";
+}
+
+@* Page Header *@
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">@ViewData["Title"]</h1>
+     <div>
+         <a asp-action="Index" class="btn btn-sm btn-outline-secondary">
+             <i class="bi bi-arrow-left me-1"></i> Back to Users List
+         </a>
+    </div>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-md-8 col-lg-7 col-xl-6">
+        <div class="card shadow-sm mb-4">
+             <div class="card-header">
+                 <h4 class="mb-0"><i class="bi bi-person-plus-fill me-2 text-primary"></i>Create User Account</h4>
+            </div>
+            <div class="card-body p-4">
+                <p class="text-body-secondary mb-4">Create login credentials and assign a role for an existing employee who does not yet have an account.</p>
+
+                <form asp-action="Register" method="post" novalidate>
+                    @Html.AntiForgeryToken()
+                    <div asp-validation-summary="ModelOnly" class="alert alert-danger mb-3" role="alert"></div>
+
+                    <h5 class="text-primary-emphasis mb-3 small text-uppercase fw-semibold">Link & Assign</h5>
+                    <div class="mb-3">
+                        <label asp-for="EmployeeId" class="form-label fw-medium">Link to Employee</label>
+                        <select asp-for="EmployeeId" class="form-select" asp-items="ViewBag.EmployeeList">
+                            <option value="">-- Select Employee --</option>
+                        </select>
+                        <span asp-validation-for="EmployeeId" class="text-danger small d-block mt-1"></span>
+                        <small class="form-text text-muted">Select an active employee who does not already have a user account.</small>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="RoleId" class="form-label fw-medium">Assign Role</label>
+                        <select asp-for="RoleId" class="form-select" asp-items="ViewBag.RoleList">
+                             <option value="">-- Select Role --</option>
+                        </select>
+                        <span asp-validation-for="RoleId" class="text-danger small d-block mt-1"></span>
+                    </div>
+
+                    <hr class="my-4">
+
+                     <h5 class="text-primary-emphasis mb-3 small text-uppercase fw-semibold">Login Credentials</h5>
+                    <div class="mb-3">
+                        <label asp-for="Username" class="form-label fw-medium"></label>
+                        <input asp-for="Username" class="form-control" autocomplete="username" placeholder="Enter unique username"/>
+                        <span asp-validation-for="Username" class="text-danger small d-block mt-1"></span>
+                    </div>
+
+
+                    <div class="row g-3">
+                         <div class="col-md-6">
+                            <label asp-for="Password" class="form-label fw-medium"></label>
+                            <input asp-for="Password" class="form-control" type="password" autocomplete="new-password" placeholder="Enter password" />
+                            <span asp-validation-for="Password" class="text-danger small d-block mt-1"></span>
+                            <div class="form-text text-muted small">Minimum 8 characters.</div>
+                         </div>
+                         <div class="col-md-6">
+                            <label asp-for="ConfirmPassword" class="form-label fw-medium"></label>
+                            <input asp-for="ConfirmPassword" class="form-control" type="password" autocomplete="new-password" placeholder="Confirm password" />
+                            <span asp-validation-for="ConfirmPassword" class="text-danger small d-block mt-1"></span>
+                         </div>
+                    </div>
+
+                    <hr class="my-4">
+
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a asp-action="Index" class="btn btn-outline-secondary px-4">Cancel</a>
+                        <button type="submit" class="btn btn-primary px-4">
+                           <i class="bi bi-person-check-fill me-2"></i>Register User
+                        </button>
+                    </div>
+                </form>
+            </div> @* End Card Body *@
+        </div> @* End Card *@
+    </div> @* End Col *@
+</div> @* End Row *@
+
+
+@section Scripts {
+    @{ await Html.RenderPartialAsync("_ValidationScriptsPartial"); }
+}

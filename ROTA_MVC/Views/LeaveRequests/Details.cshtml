@@ -1,0 +1,129 @@
+﻿@model ROTA_MVC.Models.LeaveRequestDto 
+@using ROTA_MVC.Models
+
+@{
+    ViewData["Title"] = "Leave Request Details";
+    bool isAdmin = User.IsInRole("Admin");
+    // Get EmployeeID from ViewBag (as per your original code's logic)
+    int currentUserEmployeeId = ViewBag.CurrentUserEmployeeId ?? -1;
+    bool canUserCancel = (Model.Status == LeaveStatus.Pending || Model.Status == LeaveStatus.Approved) &&
+                         (isAdmin || currentUserEmployeeId == Model.EmployeeId);
+
+    // Determine Badge Class based on Status for styling
+    string badgeClass = Model.Status switch {
+        LeaveStatus.Approved => "bg-success-subtle text-success-emphasis",
+        LeaveStatus.Rejected => "bg-danger-subtle text-danger-emphasis",
+        LeaveStatus.Pending => "bg-warning-subtle text-warning-emphasis",
+        LeaveStatus.Cancelled => "bg-secondary-subtle text-secondary-emphasis",
+        _ => "bg-light text-dark"
+    };
+    string statusIcon = Model.Status switch {
+        LeaveStatus.Approved => "bi-check-circle-fill",
+        LeaveStatus.Rejected => "bi-x-octagon-fill",
+        LeaveStatus.Pending => "bi bi-hourglass-split",
+        LeaveStatus.Cancelled => "bi bi-slash-circle-fill",
+        _ => "bi-question-circle-fill"
+    };
+
+}
+
+@* --- Page Header --- *@
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">@ViewData["Title"]</h1>
+    <div> @* Action Buttons Area *@
+         <a asp-action="Index" class="btn btn-sm btn-outline-secondary">
+             <i class="bi bi-arrow-left me-1"></i> Back to List
+         </a>
+         @if (isAdmin && Model.Status == LeaveStatus.Pending)
+         {
+             <a asp-action="Approve" asp-route-id="@Model.LeaveRequestId" class="btn btn-sm btn-success ms-2"><i class="bi bi-check-lg me-1"></i>Approve</a>
+             <a asp-action="Reject" asp-route-id="@Model.LeaveRequestId" class="btn btn-sm btn-danger ms-1"><i class="bi bi-x-lg me-1"></i>Reject</a>
+         }
+          @if (canUserCancel)
+         {
+              <a asp-action="Cancel" asp-route-id="@Model.LeaveRequestId" class="btn btn-sm btn-outline-danger ms-1"><i class="bi bi-x-circle me-1"></i>Cancel Request</a>
+         }
+    </div>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-lg-10 col-xl-8">
+         <div class="card shadow-sm mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                 <div>
+                    <h4 class="mb-0 d-inline-block me-2">Request Details</h4>
+                    <span class="badge rounded-pill @badgeClass fs-6 align-middle"><i class="@statusIcon me-1"></i>@Model.StatusString</span>
+                 </div>
+                  <small class="text-muted">ID: @Model.LeaveRequestId</small>
+            </div>
+            <div class="card-body p-4">
+
+                @* Conditionally show Employee Info for Admins *@
+                @if (isAdmin)
+                {
+                    <div class="mb-3 pb-3 border-bottom">
+                         <h5 class="text-primary-emphasis mb-2 small text-uppercase fw-semibold">Employee Information</h5>
+                        <dl class="row mb-0">
+                           <dt class="col-sm-4 col-md-3">Employee</dt>
+                           <dd class="col-sm-8 col-md-9">@Model.EmployeeFullName</dd>
+                           <dt class="col-sm-4 col-md-3">Team</dt>
+                           <dd class="col-sm-8 col-md-9">@(string.IsNullOrWhiteSpace(Model.TeamName) ? Html.Raw("<span class='text-muted'>Unassigned</span>") : Model.TeamName)</dd>
+                        </dl>
+                    </div>
+                }
+
+                <div class="mb-3 @(Model.ApproverUserId.HasValue ? "pb-3 border-bottom" : "")"> @* Add border only if approval section will follow *@
+                    <h5 class="text-primary-emphasis mb-2 small text-uppercase fw-semibold">Request Details</h5>
+                    <dl class="row mb-0">
+                        <dt class="col-sm-4 col-md-3">Leave Type</dt>
+                        <dd class="col-sm-8 col-md-9">@Model.LeaveTypeName</dd>
+                        <dt class="col-sm-4 col-md-3">Start</dt>
+                        <dd class="col-sm-8 col-md-9">@Model.LeaveStartDateTime.ToLocalTime().ToString("f")</dd>
+                        <dt class="col-sm-4 col-md-3">End</dt>
+                        <dd class="col-sm-8 col-md-9">@Model.LeaveEndDateTime.ToLocalTime().ToString("f")</dd>
+                        <dt class="col-sm-4 col-md-3">Reason</dt>
+                        <dd class="col-sm-8 col-md-9">@(string.IsNullOrWhiteSpace(Model.Reason) ? Html.Raw("<span class='text-muted'>N/A</span>") : Model.Reason)</dd>
+                        <dt class="col-sm-4 col-md-3">Date Requested</dt>
+                        <dd class="col-sm-8 col-md-9">@Model.RequestedDate.ToLocalTime().ToString("g")</dd>
+                    </dl>
+                </div>
+
+
+                 @* Show Approval/Rejection Info if applicable *@
+                 @if (Model.ApproverUserId.HasValue && (Model.Status == LeaveStatus.Approved || Model.Status == LeaveStatus.Rejected))
+                 {
+                    <div class="mb-3">
+                        <h5 class="text-primary-emphasis mb-2 small text-uppercase fw-semibold">Approval/Rejection Details</h5>
+                        <dl class="row mb-0">
+                            <dt class="col-sm-4 col-md-3">Action By</dt>
+                            <dd class="col-sm-8 col-md-9">
+                                @if (!string.IsNullOrEmpty(Model.ApproverUsername))
+                                {
+                                    @Model.ApproverUsername
+                                }
+                                else
+                                {
+                                    @Html.Raw("<span class='text-muted'>N/A</span>")
+                                }
+                            </dd>
+                            <dt class="col-sm-4 col-md-3">Action Date</dt>
+                            <dd class="col-sm-8 col-md-9">
+                                @if (Model.ApprovalDate.HasValue)
+                                {
+                                    @Model.ApprovalDate.Value.ToLocalTime().ToString("g")
+                                }
+                                else
+                                {
+                                    @Html.Raw("<span class='text-muted'>N/A</span>")
+                                }
+                            </dd>
+                            <dt class="col-sm-4 col-md-3">Notes</dt>
+                            <dd class="col-sm-8 col-md-9">@(string.IsNullOrWhiteSpace(Model.ApproverNotes) ? Html.Raw("<span class='text-muted'>N/A</span>") : Model.ApproverNotes)</dd>
+                        </dl>
+                    </div>
+                 }
+
+            </div> @* End Card Body *@
+         </div> @* End Card *@
+    </div> @* End Col *@
+</div> @* End Row *@

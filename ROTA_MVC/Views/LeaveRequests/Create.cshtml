@@ -1,0 +1,97 @@
+﻿@model ROTA_MVC.Models.CreateLeaveRequestDto
+@using System.Security.Claims
+
+@{
+    ViewData["Title"] = "Request New Leave";
+    bool isAdmin = User.IsInRole("Admin");
+}
+
+@* Page Header *@
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">@ViewData["Title"]</h1>
+     <div>
+         <a asp-action="Index" class="btn btn-sm btn-outline-secondary">
+             <i class="bi bi-arrow-left me-1"></i> Back to Leave Requests
+         </a>
+    </div>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-md-8 col-lg-7 col-xl-6">
+        <div class="card shadow-sm mb-4">
+            <div class="card-header">
+                 <h4 class="mb-0">Leave Request Details</h4>
+            </div>
+            <div class="card-body p-4">
+                <form asp-action="Create" method="post" novalidate>
+                    @Html.AntiForgeryToken()
+                    <div asp-validation-summary="ModelOnly" class="alert alert-danger mb-3" role="alert"></div>
+
+                    @* Conditionally show Employee selection for Admins *@
+                    @if (isAdmin)
+                    {
+                        <div class="mb-3">
+                            <label asp-for="EmployeeId" class="form-label">Request For Employee</label>
+                            <select asp-for="EmployeeId" class="form-select" asp-items="ViewBag.EmployeeId">
+                                <option value="">-- Select Employee --</option>
+                            </select>
+                            <span asp-validation-for="EmployeeId" class="text-danger small d-block mt-1"></span>
+                        </div>
+                    }
+                    else
+                    {
+                        @* Hidden field for non-admins, EmployeeId set in Controller *@
+                        <input type="hidden" asp-for="EmployeeId" />
+                        <div class="mb-3">
+                            <label class="form-label">Requesting For</label>
+                            <input type="text" class="form-control" value="@User.Identity?.Name" readonly disabled />
+                            <small class="form-text text-muted">Leave request will be submitted for the currently logged-in user.</small>
+                        </div>
+                    }
+
+                    <div class="mb-3">
+                        <label asp-for="LeaveTypeId" class="form-label">Leave Type</label>
+                        <select asp-for="LeaveTypeId" class="form-select" asp-items="ViewBag.LeaveTypeId">
+                             <option value="">-- Select Type --</option>
+                        </select>
+                        <span asp-validation-for="LeaveTypeId" class="text-danger small d-block mt-1"></span>
+                    </div>
+
+                    @* Group Dates Side-by-Side *@
+                    <div class="row g-3 mb-3">
+                         <div class="col-md-6">
+                            <label asp-for="LeaveStartDateTime" class="form-label">Start Date & Time</label>
+                            <input asp-for="LeaveStartDateTime" class="form-control" type="datetime-local"/>
+                            <span asp-validation-for="LeaveStartDateTime" class="text-danger small d-block mt-1"></span>
+                        </div>
+                         <div class="col-md-6">
+                            <label asp-for="LeaveEndDateTime" class="form-label">End Date & Time</label>
+                            <input asp-for="LeaveEndDateTime" class="form-control" type="datetime-local"/>
+                            <span asp-validation-for="LeaveEndDateTime" class="text-danger small d-block mt-1"></span>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="Reason" class="form-label">Reason / Notes</label>
+                        <textarea asp-for="Reason" class="form-control" rows="3" placeholder="(Optional)"></textarea>
+                        <span asp-validation-for="Reason" class="text-danger small d-block mt-1"></span>
+                    </div>
+
+                    <hr class="my-4">
+
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a asp-action="Index" class="btn btn-outline-secondary px-4">Cancel</a>
+                        <button type="submit" class="btn btn-primary px-4">
+                           <i class="bi bi-send-fill me-2"></i>Submit Request
+                        </button>
+                    </div>
+                </form>
+            </div> @* End Card Body *@
+        </div> @* End Card *@
+    </div> @* End Col *@
+</div> @* End Row *@
+
+
+@section Scripts {
+    @{ await Html.RenderPartialAsync("_ValidationScriptsPartial"); }
+}

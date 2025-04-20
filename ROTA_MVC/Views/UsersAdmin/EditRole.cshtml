@@ -1,0 +1,61 @@
+﻿@model ROTA_MVC.Models.UpdateUserRoleDto 
+
+@{
+    ViewData["Title"] = "Edit User Role";
+    var userId = ViewContext.RouteData.Values["userId"]; // Get ID for links/context
+    var userName = ViewBag.UserName ?? "User"; // Get username passed from controller
+}
+
+@* Page Header *@
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">@ViewData["Title"]</h1>
+     <div>
+         <a asp-action="Index" class="btn btn-sm btn-outline-secondary">
+             <i class="bi bi-arrow-left me-1"></i> Back to Users List
+         </a>
+          <a asp-action="Details" asp-route-userId="@userId" class="btn btn-sm btn-outline-info ms-2">
+             <i class="bi bi-info-circle me-1"></i> View User Details
+         </a>
+    </div>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-md-8 col-lg-7 col-xl-6">
+        <div class="card shadow-sm mb-4">
+             <div class="card-header">
+                 <h4 class="mb-0"><i class="bi bi-person-badge me-2 text-primary"></i>Assign New Role for @userName</h4>
+            </div>
+            <div class="card-body p-4">
+                @* Form posts back to the EditRole POST action, ID passed via route *@
+                <form asp-action="EditRole" method="post" novalidate>
+                    @Html.AntiForgeryToken()
+                    <div asp-validation-summary="ModelOnly" class="alert alert-danger mb-3" role="alert"></div>
+                    @* ID is implicitly passed via the route parameter *@
+
+                    <div class="mb-4"> @* Increased margin *@
+                        <label asp-for="RoleId" class="form-label fw-medium">Select New Role</label>
+                        <select asp-for="RoleId" class="form-select form-select-lg" asp-items="ViewBag.RoleList"> @* Larger select *@
+                            @* No empty option - user must have a role *@
+                        </select>
+                        <span asp-validation-for="RoleId" class="text-danger small d-block mt-1"></span>
+                        <small class="form-text text-muted">Select the role that defines the user's permissions within the application.</small>
+                    </div>
+
+                    <hr class="my-4">
+
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a asp-action="Index" class="btn btn-outline-secondary px-4">Cancel</a>
+                        <button type="submit" class="btn btn-primary px-4">
+                           <i class="bi bi-check-lg me-2"></i>Update Role
+                        </button>
+                    </div>
+                </form>
+            </div> @* End Card Body *@
+        </div> @* End Card *@
+    </div> @* End Col *@
+</div> @* End Row *@
+
+
+@section Scripts {
+    @{ await Html.RenderPartialAsync("_ValidationScriptsPartial"); }
+}

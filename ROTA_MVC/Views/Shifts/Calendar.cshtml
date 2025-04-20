@@ -1,0 +1,407 @@
+﻿@model IEnumerable<ROTA_MVC.Models.EmployeeDto>
+@using ROTA_MVC.Models
+
+@{
+    ViewData["Title"] = "Rota Calendar";
+    bool isAdmin = User.IsInRole("Admin");
+}
+
+<style>
+    #calendar {
+        max-width: 1100px; 
+        margin: 20px auto; 
+    }
+    .fc-event-shift {
+        border-left: 3px solid #0d6efd;
+    }
+
+    .beautiful-title {
+        font-family: 'Roboto', 'Segoe UI', Tahoma, sans-serif;
+        font-size: 2.25rem; /* Slightly smaller for elegance */
+        font-weight: 500; /* Medium weight for professionalism */
+        color: #202124; /* Google’s dark gray for text */
+        text-align: center;
+        margin: 24px auto; /* Google’s 8px grid spacing */
+        padding: 12px 24px; /* Balanced padding */
+        background: #ffffff; /* Clean white background */
+        border-radius: 8px; /* Softer, modern corners */
+        transition: box-shadow 0.2s ease-in-out, transform 0.2s ease-in-out;
+        max-width: 600px; /* Constrain width for readability */
+        line-height: 1.4; /* Improved readability */
+    }
+    .fc-event-oncall {
+        border-left: 3px solid #dc3545;
+        font-weight: bold;
+    }
+
+    .fc-event-title{
+        color:black;
+    }
+
+    .fc-event-time{
+        display: none;
+    }
+    .fc-event-leave {
+        border-left: 3px solid #198754;
+        font-style: italic;
+        opacity: 0.9;
+    }
+
+    /* Calendar loading styles */
+    #calendar-loading {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        z-index: 10;
+        background: rgba(255,255,255,0.8);
+        padding: 20px;
+        border-radius: 5px;
+        box-shadow: 0 0 15px rgba(0,0,0,0.2);
+    }
+</style>
+
+<h1 class="beautiful-title">Rota Calendar</h1>
+
+@* --- Filters --- *@
+<div class="row mb-3 g-2 align-items-end bg-light p-3 border rounded shadow-sm">
+    @if (isAdmin)
+    { @* Only Admins see these specific filters in this design *@
+        <div class="col-md-3">
+            <label for="employeeFilter" class="form-label">Employee</label>
+            <select id="employeeFilter" name="employeeId" class="form-select form-select-sm">
+                <option value="">-- All Employees --</option>
+                @* Populate Employee Dropdown from Model *@
+                @foreach (var emp in Model.OrderBy(e => e.LastName).ThenBy(e => e.FirstName))
+                {
+                    <option value="@emp.EmployeeId">@emp.FullName</option>
+                }
+            </select>
+        </div>
+        <div class="col-md-3">
+            <label for="teamFilter" class="form-label">Team</label>
+            @* Use ViewBag for Team List populated by controller *@
+            <select id="teamFilter" name="teamId" class="form-select form-select-sm" asp-items="ViewBag.TeamList">
+                <option value="">-- All Teams --</option>
+            </select>
+        </div>
+    }
+    else
+    {
+        <div class="col-md-3"></div> @* Placeholder for alignment *@
+        <div class="col-md-3"></div> @* Placeholder for alignment *@
+    }
+    <div class="col-md-3">
+        <label for="eventTypeFilter" class="form-label">Event Type</label>
+        <select id="eventTypeFilter" name="eventType" class="form-select form-select-sm">
+            <option value="">-- All Events --</option>
+            <option value="shift">Shifts Only</option>
+            <option value="leave">Leave Only</option>
+            <option value="oncall">On Call Shifts Only</option>
+        </select>
+    </div>
+    <div class="col-auto ms-auto">
+        @* Push buttons right *@
+        <button id="filterCalendarBtn" type="button" class="btn btn-sm btn-info">Apply Filter</button>
+        <button id="clearFiltersBtn" type="button" class="btn btn-sm btn-secondary">Clear</button>
+    </div>
+</div>
+
+@* Loading Indicator *@
+<div id="calendar-loading" class="text-center" style="display: none;">
+    <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">Loading...</span>
+    </div>
+    <p class="text-muted">Loading calendar data...</p>
+</div>
+
+@* Calendar Div *@
+<div id="calendar" class="mb-4"></div>
+
+@* Event Detail Modal *@
+<div class="modal fade" id="eventDetailModal" tabindex="-1" aria-labelledby="eventDetailModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="eventDetailModalLabel">Event Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="eventDetailContent">
+                <!-- Event details will be populated here -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <a id="editEventBtn" href="#" class="btn btn-primary">Edit</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            var calendarEl = document.getElementById('calendar');
+            var loadingEl = document.getElementById('calendar-loading');
+            var eventDetailModal = new bootstrap.Modal(document.getElementById('eventDetailModal'));
+
+            // --- Function to get filter values ---
+            function getApiFilterParams() {
+                let params = {};
+                const empId = document.getElementById('employeeFilter')?.value;
+                const teamId = document.getElementById('teamFilter')?.value;
+                const eventType = document.getElementById('eventTypeFilter')?.value;
+
+                if (empId) params.employeeId = empId;
+                if (teamId) params.teamId = teamId;
+
+                // Apply type filters
+                if (eventType === 'leave') params.status = @((int)ROTA_MVC.Models.LeaveStatus.Approved);
+                if (eventType === 'oncall') params.isOnCall = true;
+
+                return params;
+            }
+
+            // --- Event Source Fetch Function ---
+            function fetchCalendarEvents(fetchInfo, successCallback, failureCallback) {
+                console.log("Fetching events for UTC range:", fetchInfo.start.toISOString(), fetchInfo.end.toISOString());
+                loadingEl.style.display = 'block';
+
+                let startIso = fetchInfo.start.toISOString();
+                let endIso = fetchInfo.end.toISOString();
+                let filters = getApiFilterParams();
+
+                // --- Build URLs with filters ---
+                let shiftParams = new URLSearchParams({ start: startIso, end: endIso });
+                let leaveParams = new URLSearchParams({ start: startIso, end: endIso });
+
+                Object.keys(filters).forEach(key => {
+                    // Apply general filters to both, specific filters only where applicable
+                    if (key === 'employeeId' || key === 'teamId') {
+                        shiftParams.append(key, filters[key]);
+                        leaveParams.append(key, filters[key]);
+                    } else if (key === 'isOnCall') { // Shift specific filter
+                        shiftParams.append(key, filters[key]);
+                    } else if (key === 'status') { // Leave specific filter
+                        leaveParams.append(key, filters[key]);
+                    }
+                });
+
+                let shiftUrl = `/api/apiproxy/shifts?${shiftParams.toString()}`;
+                let leaveUrl = `/api/apiproxy/leaverequests?${leaveParams.toString()}`;
+                // --- End Build URLs ---
+
+                // Determine which sources to fetch based on eventType filter
+                let promises = [];
+                const eventTypeFilter = document.getElementById('eventTypeFilter')?.value;
+
+                if (eventTypeFilter !== 'leave') {
+                    promises.push(fetch(shiftUrl).then(r => r.ok ? r.json() : Promise.reject(new Error(`Shift fetch failed: ${r.status}`))));
+                } else {
+                    promises.push(Promise.resolve([]));
+                }
+
+                if (eventTypeFilter !== 'shift' && eventTypeFilter !== 'oncall') {
+                    promises.push(fetch(leaveUrl).then(r => r.ok ? r.json() : Promise.reject(new Error(`Leave fetch failed: ${r.status}`))));
+                } else {
+                    promises.push(Promise.resolve([]));
+                }
+
+                // --- Process results ---
+                Promise.all(promises)
+                    .then(results => {
+                        let shiftData = results[0] || [];
+                        let leaveData = results[1] || [];
+
+                        // Map shift data to calendar events (using format from second example)
+                        const shiftEvents = shiftData.map(shift => ({
+                            id: `S_${shift.shiftId}`,
+                            title: `${shift.employeeFullName || shift.employeeName || 'N/A'} (${shift.shiftTypeName || 'Shift'})`,
+                            start: shift.shiftStartDateTime || shift.startTime,
+                            end: shift.shiftEndDateTime || shift.endTime,
+                            allDay: false,
+                            color: shift.isOnCall ? '#dc3545' : '#0d6efd', // Red for on-call, blue for regular
+                            classNames: ['fc-event-shift', shift.isOnCall ? 'fc-event-oncall' : ''],
+                            extendedProps: {
+                                type: 'Shift',
+                                employeeId: shift.employeeId,
+                                employeeName: shift.employeeFullName || shift.employeeName || 'N/A',
+                                location: shift.location,
+                                notes: shift.notes,
+                                isOnCall: shift.isOnCall,
+                                shiftType: shift.shiftTypeName || 'Regular',
+                                originalData: shift,
+                                editUrl: `/Shifts/Edit/${shift.shiftId}`
+                            }
+                        }));
+
+                        // Map leave data to calendar events (using format from second example)
+                        const leaveEvents = leaveData.map(leave => ({
+                            id: `L_${leave.leaveRequestId}`,
+                            title: `${leave.employeeFullName || leave.employeeName || 'N/A'} - ${leave.leaveTypeName || leave.leaveType || 'Leave'}`,
+                            start: leave.leaveStartDateTime || leave.startDate,
+                            end: leave.leaveEndDateTime || leave.endDate,
+                            allDay: true,
+                            color: '#0f5132', // Green for leave
+                            classNames: ['fc-event-leave'],
+                            extendedProps: {
+                                type: 'Leave',
+                                employeeId: leave.employeeId,
+                                employeeName: leave.employeeFullName || leave.employeeName || 'N/A',
+                                leaveType: leave.leaveTypeName || leave.leaveType || 'Leave',
+                                reason: leave.reason,
+                                status: leave.status,
+                                originalData: leave,
+                                editUrl: `/LeaveRequests/Edit/${leave.leaveRequestId}`
+                            }
+                        }));
+
+                        successCallback(shiftEvents.concat(leaveEvents));
+                    })
+                    .catch(error => {
+                        console.error("Error fetching calendar data:", error);
+                        failureCallback(error);
+                        alert('Could not load schedule data. Please ensure you are logged in and the API is running.');
+                    })
+                    .finally(() => {
+                        loadingEl.style.display = 'none';
+                    });
+            }
+
+            var calendar = new FullCalendar.Calendar(calendarEl, {
+                initialView: 'dayGridMonth',
+                headerToolbar: {
+                    left: 'prev,next today',
+                    center: 'title',
+                    right: 'dayGridMonth,timeGridWeek,timeGridDay,listWeek'
+                },
+                navLinks: true,
+                dayMaxEvents: true,
+                nowIndicator: true,
+                handleWindowResize: true,
+                height: 'auto',
+                timeZone: 'UTC',
+                startParam: 'start',
+                endParam: 'end',
+                events: fetchCalendarEvents,
+                loading: function(isLoading) {
+                    loadingEl.style.display = isLoading ? 'block' : 'none';
+                    calendarEl.style.opacity = isLoading ? 0.7 : 1; 
+                },
+                eventClick: function(info) {
+                    info.jsEvent.preventDefault(); // Prevent browser navigation
+
+                    const event = info.event;
+                    const props = event.extendedProps;
+                    let detailHtml = '';
+
+                    // Create different detail views based on event type
+                    if (props.type === 'Shift') {
+                        const bgColor = props.isOnCall ? 'danger' : 'primary';
+                        detailHtml = `
+                            <div class="card">
+                                <div class="card-header bg-${bgColor} text-black">
+                                    ${props.isOnCall ? 'On Call Shift' : props.shiftType}
+                                </div>
+                                <div class="card-body">
+                                    <p><strong>Employee:</strong> ${props.employeeName}</p>
+                                    <p><strong>Start:</strong> ${new Date(event.start).toLocaleString()}</p>
+                                    <p><strong>End:</strong> ${new Date(event.end).toLocaleString()}</p>
+                                    ${props.location ? `<p><strong>Location:</strong> ${props.location}</p>` : ''}
+                                    ${props.notes ? `<p><strong>Notes:</strong> ${props.notes}</p>` : ''}
+                                </div>
+                            </div>
+                        `;
+                    } else if (props.type === 'Leave') {
+                        const leaveStatus = ['Pending', 'Approved', 'Denied'][props.status] || 'Unknown';
+                        detailHtml = `
+                            <div class="card">
+                                <div class="card-header bg-success text-white">
+                                    Leave Request (${leaveStatus})
+                                </div>
+                                <div class="card-body">
+                                    <p><strong>Employee:</strong> ${props.employeeName}</p>
+                                    <p><strong>Start Date:</strong> ${new Date(event.start).toLocaleDateString()}</p>
+                                    <p><strong>End Date:</strong> ${new Date(event.end).toLocaleDateString()}</p>
+                                    <p><strong>Leave Type:</strong> ${props.leaveType}</p>
+                                    ${props.reason ? `<p><strong>Reason:</strong> ${props.reason}</p>` : ''}
+                                </div>
+                            </div>
+                        `;
+                    }
+
+                    // Update modal content and edit button URL
+                    document.getElementById('eventDetailContent').innerHTML = detailHtml;
+                    const editButton = document.getElementById('editEventBtn');
+
+                    // Only show edit button if user is admin and editUrl is available
+                    if (@isAdmin.ToString().ToLower() && props.editUrl) {
+                        editButton.href = props.editUrl;
+                        editButton.style.display = 'block';
+                    } else {
+                        editButton.style.display = 'none';
+                    }
+
+                    // Show modal
+                    eventDetailModal.show();
+
+                    // Additionally show important info in console (like in second example)
+                    console.log(`Event Details:`, props.originalData);
+                },
+                eventDidMount: function(info) {
+                    // Add tooltips to events so you can immediately see details when hovering
+                    const tooltipContent = `
+                        <strong>${info.event.title}</strong><br>
+                        ${info.event.extendedProps.type === 'Shift' ?
+                            `${new Date(info.event.start).toLocaleTimeString()} - ${new Date(info.event.end).toLocaleTimeString()}` :
+                            `${new Date(info.event.start).toLocaleDateString()} - ${new Date(info.event.end).toLocaleDateString()}`
+                        }
+                    `;
+
+                    new bootstrap.Tooltip(info.el, {
+                        title: tooltipContent,
+                        placement: 'top',
+                        html: true,
+                        trigger: 'hover',
+                        container: 'body'
+                    });
+                },
+                // Allow admins to click and create new events
+                selectable: @isAdmin.ToString().ToLower(),
+                select: function(selectionInfo) {
+                    if (@isAdmin.ToString().ToLower()) {
+                        const start = selectionInfo.start;
+                        const end = selectionInfo.end;
+                        const isAllDay = selectionInfo.allDay;
+
+                        if (isAllDay) {
+                            window.location.href = `/LeaveRequests/Create?start=${start.toISOString()}&end=${end.toISOString()}`;
+                        } else {
+                            window.location.href = `/Shifts/Create?start=${start.toISOString()}&end=${end.toISOString()}`;
+                        }
+                    }
+                }
+            });
+
+            calendar.render();
+
+            // --- Filter Button Logic ---
+            document.getElementById('filterCalendarBtn')?.addEventListener('click', function() {
+                console.log("Refetching events with filters...");
+                calendar.refetchEvents();
+            });
+
+            document.getElementById('clearFiltersBtn')?.addEventListener('click', function() {
+                // Reset dropdowns
+                if (document.getElementById('employeeFilter')) {
+                    document.getElementById('employeeFilter').value = '';
+                }
+                if (document.getElementById('teamFilter')) {
+                    document.getElementById('teamFilter').value = '';
+                }
+                document.getElementById('eventTypeFilter').value = '';
+                console.log("Refetching events after clearing filters...");
+                calendar.refetchEvents();
+            });
+        });
+    </script>
+}

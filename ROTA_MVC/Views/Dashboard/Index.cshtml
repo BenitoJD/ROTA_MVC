@@ -1,0 +1,281 @@
+﻿@model ROTA_MVC.Models.DashboardViewModel
+@using ROTA_MVC.Models
+@using System.Security.Claims
+
+@{
+    ViewData["Title"] = "Dashboard"; // Use simpler title for tab/bookmark
+    // --- Safe Data Access & Variables ---
+    var pendingCounts = Model?.PendingLeaveCounts ?? Enumerable.Empty<PendingCountDto>();
+    var upcomingOnCall = Model?.UpcomingOnCall ?? Enumerable.Empty<UpcomingOnCallDto>();
+    var leaveSummary = Model?.LeaveSummaryByType ?? Enumerable.Empty<LeaveSummaryDto>();
+    var shiftDistribution = Model?.ShiftTypeDistribution ?? Enumerable.Empty<ShiftTypeDistributionDto>();
+    var overallPendingCount = pendingCounts.FirstOrDefault(p => p.TeamId == null)?.Count ?? 0;
+    var summaryStartDate = Model?.SummaryPeriodStartDate ?? default;
+    var summaryEndDate = Model?.SummaryPeriodEndDate ?? default;
+    var summaryPeriod = (summaryStartDate != default && summaryEndDate != default)
+                        ? $"{summaryStartDate:dd MMM} - {summaryEndDate:dd MMM yyyy}" // Slightly clearer range
+                        : "";
+    var onCallStartDate = Model?.OnCallStartDate ?? default;
+    var onCallEndDate = Model?.OnCallEndDate ?? default;
+    var onCallPeriod = (onCallStartDate != default && onCallEndDate != default)
+                       ? $"{onCallStartDate:ddd, dd MMM} - {onCallEndDate:ddd, dd MMM}"
+                       : "Upcoming";
+    bool isAdmin = User.IsInRole("Admin");
+}
+
+@* --- Page Header --- *@
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-4 border-bottom">
+    <h1 class="h2">Dashboard</h1>
+    @* Optional Actions Area *@
+    @* <div class="btn-toolbar mb-2 mb-md-0">
+        <div class="btn-group me-2">
+            <button type="button" class="btn btn-sm btn-outline-secondary">Share</button>
+            <button type="button" class="btn btn-sm btn-outline-secondary">Export</button>
+        </div>
+        </div> *@
+</div>
+
+@* --- Feedback Messages --- *@
+@if (TempData["SuccessMessage"] != null) { <div class="alert alert-success alert-dismissible fade show mb-4" role="alert">@TempData["SuccessMessage"]<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button></div> }
+@if (TempData["ErrorMessage"] != null) { <div class="alert alert-danger alert-dismissible fade show mb-4" role="alert">@TempData["ErrorMessage"]<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button></div> }
+
+@* --- Key Metric Row --- *@
+<div class="row g-3 g-lg-4 mb-4"> @* Adjusted gutter based on screen size *@
+
+    @* Pending Actions (Admin Only) *@
+    @if (isAdmin)
+    {
+        <div class="col-md-6 col-lg-4"> @* Adjusted column sizes *@
+            <div class="card p-3 h-100 border-start border-warning border-4"> @* Accent border *@
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <div class="text-warning text-uppercase small fw-bold mb-1">Pending Actions</div>
+                        <div class="h3 fw-semibold mb-0">@overallPendingCount</div>
+                         <div class="text-body-secondary small">Leave Requests</div>
+                    </div>
+                    <div class="fs-1 text-warning opacity-50"><i class="bi bi-hourglass-split"></i></div>
+                </div>
+                 <a asp-controller="LeaveRequests" asp-action="Index" asp-route-status="@((int)LeaveStatus.Pending)" class="icon-link text-decoration-none small mt-2 stretched-link"> @* Stretched link makes card clickable *@
+                     View Pending <i class="bi bi-arrow-right"></i>
+                 </a>
+            </div>
+        </div>
+    }
+    else
+    {
+         @* My Leave Actions Card (Non-Admin) *@
+         <div class="col-md-6 col-lg-4">
+             <div class="card p-3 h-100 border-start border-success border-4">
+                 <div class="d-flex justify-content-between mb-2">
+                     <div>
+                        <div class="text-success text-uppercase small fw-bold mb-1">My Leave</div>
+                        <div class="h5 fw-medium mb-0">Manage Requests</div> @* Slightly smaller heading *@
+                     </div>
+                      <div class="fs-1 text-success opacity-50"><i class="bi bi-calendar-plus"></i></div>
+                 </div>
+                  <div class="mt-auto d-flex gap-2 pt-1">
+                       <a asp-controller="LeaveRequests" asp-action="Create" class="btn btn-sm btn-success flex-grow-1">Request</a>
+                       <a asp-controller="LeaveRequests" asp-action="Index" class="btn btn-sm btn-outline-secondary flex-grow-1">View Mine</a>
+                  </div>
+             </div>
+         </div>
+    }
+
+    @* My Schedule Card *@
+    <div class="col-md-6 col-lg-4">
+        <div class="card p-3 h-100 border-start border-info border-4">
+             <div class="d-flex justify-content-between mb-2">
+                <div>
+                    <div class="text-info text-uppercase small fw-bold mb-1">My Schedule</div>
+                    <div class="h5 fw-medium mb-0">Shifts & Leave</div>
+                </div>
+                 <div class="fs-1 text-info opacity-50"><i class="bi bi-calendar-week"></i></div>
+            </div>
+             <div class="mt-auto d-flex gap-2 pt-1">
+                  <a asp-controller="Shifts" asp-action="Calendar" class="btn btn-sm btn-info flex-grow-1">View Calendar</a>
+                  <a asp-controller="Shifts" asp-action="Index" class="btn btn-sm btn-outline-secondary flex-grow-1">Shift List</a>
+             </div>
+        </div>
+    </div>
+
+    @* Quick Links / Actions Card *@
+    <div class="col-md-6 col-lg-4">
+         <div class="card p-3 h-100 border-start border-primary border-4">
+             <div class="d-flex justify-content-between mb-2">
+                 <div>
+                    <div class="text-primary text-uppercase small fw-bold mb-1">Quick Actions</div>
+                    <div class="h5 fw-medium mb-0">Common Tasks</div>
+                 </div>
+                 <div class="fs-1 text-primary opacity-50"><i class="bi bi-lightning-charge-fill"></i></div>
+            </div>
+             <div class="mt-auto d-flex flex-wrap gap-2 pt-1">
+                 <a asp-controller="LeaveRequests" asp-action="Create" class="btn btn-sm btn-success">Request Leave</a>
+                 @if(isAdmin) {
+                    <a asp-controller="Shifts" asp-action="Create" class="btn btn-sm btn-warning">Assign Shift</a>
+                    <a asp-controller="Employees" asp-action="Index" class="btn btn-sm btn-secondary">Employees</a>
+                    <a asp-controller="Teams" asp-action="Index" class="btn btn-sm btn-secondary">Teams</a>
+                 }
+             </div>
+        </div>
+    </div>
+
+</div> @* End Row 1 *@
+
+@* Removed the extra <hr /> for cleaner flow *@
+
+@* --- Row 2: Main Content Area (On Call + Summaries) --- *@
+<div class="row g-4">
+
+    @* Upcoming On-Call Section *@
+    <div class="col-lg-7 mb-4">
+         <h2 class="h4 fw-normal mb-3">Upcoming On-Call <span class="text-muted fs-6 fw-light">@onCallPeriod</span></h2>
+        @if (!upcomingOnCall.Any())
+        {
+            <div class="card card-body text-center text-muted border-dashed"> @* Use dashed border for empty state *@
+                No on-call shifts scheduled for this period.
+            </div>
+        }
+        else
+        {
+            <div class="list-group shadow-sm"> @* List Group for cleaner look *@
+                @{ DateTime currentDateHeader = default; }
+                @foreach (var assignment in upcomingOnCall.SelectMany(day => day.Assignments).OrderBy(a => a.ShiftStartDateTime).ThenBy(a => a.ShiftTypeName))
+                {
+                    @* Display Day Header only when it changes *@
+                    if (assignment.ShiftStartDateTime.Date != currentDateHeader)
+                    {
+                        currentDateHeader = assignment.ShiftStartDateTime.Date;
+                        <div class="list-group-item list-group-item-action list-group-item-light fw-semibold py-2 sticky-top bg-light"> @* Make header sticky? Might need more CSS *@
+                           <i class="bi bi-calendar-date me-2"></i>@currentDateHeader.ToString("dddd, dd MMMM yyyy")
+                        </div>
+                    }
+                    <div class="list-group-item list-group-item-action d-flex justify-content-between align-items-center ps-4"> @* Indent items under header *@
+                        <div>
+                             <span class="fw-medium text-primary">@assignment.ShiftTypeName:</span> @assignment.EmployeeName
+                             <small class="text-muted d-block">
+                                 Team: @(assignment.TeamName ?? "N/A") |
+                                 @assignment.ShiftStartDateTime.ToLocalTime().ToString("t") - @assignment.ShiftEndDateTime.ToLocalTime().ToString("t")
+                                 @if(assignment.ShiftStartDateTime.Date != assignment.ShiftEndDateTime.Date.AddDays(assignment.ShiftEndDateTime.TimeOfDay.TotalSeconds == 0 ? -1 : 0)) {
+                                     <text>(ends @assignment.ShiftEndDateTime.ToLocalTime().ToString("ddd"))</text>
+                                 }
+                             </small>
+                         </div>
+                         <span class="badge bg-danger rounded-pill" title="On Call">On Call</span>
+                    </div>
+                }
+            </div> @* End List Group *@
+        }
+    </div> @* End col-lg-7 *@
+
+    @* Summaries Section *@
+    <div class="col-lg-5 mb-4">
+
+        @* Leave Summary by Type *@
+        <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span>Leave Summary</span>
+                <span class="text-muted fw-light fs-6">@summaryPeriod</span>
+            </div>
+            <div class="card-body p-0"> @* Remove padding to let table fit edge-to-edge *@
+                @if (!leaveSummary.Any())
+                {
+                    <p class="card-text text-body-secondary text-center p-3"><i>No approved leave found.</i></p>
+                }
+                else
+                {
+                      var leaveSummaryFiltered = leaveSummary.Where(s => s.GroupingDimension == "LeaveType").ToList(); 
+                     @if (!leaveSummaryFiltered.Any()) {
+                         <p class="card-text text-body-secondary text-center p-3"><i>No data by type found.</i></p>
+                     } else {
+                        @* Add table-responsive for small screens *@
+                        <div class="table-responsive">
+                             <table class="table table-sm table-striped mb-0"> @* Striped rows, no bottom margin *@
+                                 <thead>
+                                    <tr >
+                                        <th>Leave Type</th>
+                                        <th class="text-end">Requests</th>
+                                        <th class="text-end">Total Days</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var summary in leaveSummaryFiltered.OrderBy(s=> s.GroupingName))
+                                    {
+                                        <tr>
+                                            <td>@summary.GroupingName</td>
+                                            <td class="text-end">@summary.LeaveRequestCount</td>
+                                            <td class="text-end">@summary.TotalLeaveDays.ToString("N1")</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                                 <tfoot class="table-group-divider fw-semibold"> @* Use divider for footer *@
+                                     <tr>
+                                         <td>Total</td>
+                                         <td class="text-end">@leaveSummaryFiltered.Sum(l => l.LeaveRequestCount)</td>
+                                         <td class="text-end">@leaveSummaryFiltered.Sum(l => l.TotalLeaveDays).ToString("N1")</td>
+                                     </tr>
+                                 </tfoot>
+                            </table>
+                        </div>
+                     }
+                }
+            </div>
+        </div> @* End Leave Summary Card *@
+
+
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h3 class="h6 mb-0">Shift Distribution</h3>
+                <span class="text-muted fw-light fs-6">@summaryPeriod</span>
+            </div>
+            <div class="card-body px-3 py-2">
+                @if (!shiftDistribution.Any())
+                {
+                    <p class="card-text text-body-secondary text-center mb-0"><i>No shifts found.</i></p>
+                }
+                else
+                {
+                    <ul class="list-group list-group-flush">
+                        @{
+                            var orderedDistribution = shiftDistribution.OrderByDescending(d => d.PercentageOfTotal).ToList();
+                            var distributionCount = orderedDistribution.Count;
+                        }
+                        @for (int i = 0; i < distributionCount; i++) 
+                        {
+                            var dist = orderedDistribution[i];
+                            <li class="list-group-item px-0 py-2 @(i < distributionCount - 1 ? "border-bottom" : "")">
+                                <div class="d-flex w-100 justify-content-between align-items-center mb-1">
+                                    <span class="fw-medium small">
+                                        @if (dist.IsOnCall)
+                                        {
+                                            <i class="bi bi-telephone-fill text-danger me-1" title="On Call"></i>
+                                        }
+                                        else
+                                        {
+                                            <i class="bi bi-building text-secondary me-1" title="Standard Shift"></i>
+                                        }
+                                        @dist.ShiftTypeName
+                                    </span>
+                                    <small class="text-muted">@dist.ShiftCount (@dist.PercentageOfTotal.ToString("N1")%)</small>
+                                </div>
+                                @{
+                                    var barColorClass = dist.IsOnCall ? "bg-danger" : "bg-primary";
+                                }
+                                <div class="progress" role="progressbar" aria-valuenow="@dist.PercentageOfTotal" aria-valuemin="0" aria-valuemax="100" style="height: 6px;">
+                                    <div class="progress-bar @barColorClass" style="width: @dist.PercentageOfTotal%"></div>
+                                </div>
+                            </li>
+                        }
+                        <li class="list-group-item list-group-item-light fw-bold px-0 py-2 border-top">
+                            <div class="d-flex w-100 justify-content-between small">
+                                <span>TOTAL SHIFTS</span>
+                                <span>@orderedDistribution.Sum(s => s.ShiftCount)</span> 
+                            </div>
+                        </li>
+                    </ul>
+                }
+            </div>
+        </div>
+
+    </div> @* End col-lg-5 *@
+
+</div> @* End row 2 *@

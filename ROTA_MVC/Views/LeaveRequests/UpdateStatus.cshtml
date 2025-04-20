@@ -1,0 +1,194 @@
+﻿@model ROTA_MVC.Models.UpdateLeaveStatusDto
+@{
+    ViewData["Title"] = Model.NewStatus == ROTA_MVC.Models.LeaveStatus.Approved ? "Approve Leave Request" : "Reject Leave Request";
+    var request = ViewBag.LeaveRequest as ROTA_MVC.Models.LeaveRequestDto;
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"]</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: #f8f9fa;
+            color: #202124;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 40px auto;
+            padding: 20px;
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            font-size: 24px;
+            font-weight: 500;
+            color: #202124;
+            margin-bottom: 20px;
+        }
+
+        h4 {
+            font-size: 18px;
+            font-weight: 500;
+            color: #202124;
+            margin-bottom: 15px;
+        }
+
+        .dl-horizontal dt {
+            font-weight: 400;
+            color: #5f6368;
+            font-size: 14px;
+            padding-bottom: 8px;
+        }
+
+        .dl-horizontal dd {
+            font-size: 14px;
+            color: #202124;
+            padding-bottom: 8px;
+        }
+
+        .form-control {
+            border: 1px solid #dadce0;
+            border-radius: 4px;
+            padding: 10px;
+            font-size: 14px;
+            transition: border-color 0.2s;
+        }
+
+            .form-control:focus {
+                border-color: #1a73e8;
+                box-shadow: none;
+                outline: none;
+            }
+
+        .btn-primary {
+            background-color: #1a73e8;
+            border: none;
+            border-radius: 4px;
+            padding: 10px 20px;
+            font-size: 14px;
+            font-weight: 500;
+            text-transform: none;
+            transition: background-color 0.2s;
+        }
+
+            .btn-primary:hover {
+                background-color: #1557b0;
+            }
+
+        .btn-secondary {
+            background-color: #f1f3f4;
+            color: #202124;
+            border: none;
+            border-radius: 4px;
+            padding: 10px 20px;
+            font-size: 14px;
+            font-weight: 500;
+            text-transform: none;
+            transition: background-color 0.2s;
+        }
+
+            .btn-secondary:hover {
+                background-color: #e8eaed;
+            }
+
+        .btn-success {
+            background-color: #34a853;
+        }
+
+            .btn-success:hover {
+                background-color: #2d8e44;
+            }
+
+        .btn-danger {
+            background-color: #ea4335;
+        }
+
+            .btn-danger:hover {
+                background-color: #c5221f;
+            }
+
+        .text-danger {
+            font-size: 12px;
+            color: #ea4335;
+        }
+
+        textarea.form-control {
+            resize: vertical;
+        }
+
+        .form-group {
+            margin-top: 20px;
+        }
+
+        hr {
+            border-top: 1px solid #dadce0;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>@ViewData["Title"]</h1>
+        <hr />
+
+        @if (request != null)
+        {
+            <h4>Details of Request to @(Model.NewStatus == ROTA_MVC.Models.LeaveStatus.Approved ? "Approve" : "Reject")</h4>
+            <dl class="dl-horizontal">
+                <dt>Employee</dt>
+                <dd>@request.EmployeeFullName</dd>
+                <dt>Type</dt>
+                <dd>@request.LeaveTypeName</dd>
+                <dt>Start</dt>
+                <dd>@request.LeaveStartDateTime.ToString("g")</dd>
+                <dt>End</dt>
+                <dd>@request.LeaveEndDateTime.ToString("g")</dd>
+                <dt>Reason</dt>
+                <dd>@request.Reason</dd>
+            </dl>
+
+            <div class="row">
+                <div class="col-md-6">
+                    <form asp-action="UpdateStatus" asp-route-id="@request.LeaveRequestId" method="post">
+                        <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+                        <input type="hidden" asp-for="NewStatus" />
+                        @Html.AntiForgeryToken()
+
+                        <div class="mb-3">
+                            <label asp-for="ApproverNotes" class="control-label">Notes (Optional)</label>
+                            <textarea asp-for="ApproverNotes" class="form-control" rows="3"></textarea>
+                            <span asp-validation-for="ApproverNotes" class="text-danger"></span>
+                        </div>
+
+                        <div class="form-group">
+                            <input type="submit" value="@(Model.NewStatus == ROTA_MVC.Models.LeaveStatus.Approved ? "Confirm Approval" : "Confirm Rejection")"
+                                   class="btn @(Model.NewStatus == ROTA_MVC.Models.LeaveStatus.Approved ? "btn-success" : "btn-danger")" />
+                            <a asp-action="Index" class="btn btn-secondary">Cancel</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        }
+        else
+        {
+            <p class="text-danger">Could not load leave request details.</p>
+            <a asp-action="Index" class="btn btn-secondary">Back to List</a>
+        }
+    </div>
+
+    @section Scripts {
+        @{
+            await Html.RenderPartialAsync("_ValidationScriptsPartial");
+        }
+    }
+</body>
+</html>

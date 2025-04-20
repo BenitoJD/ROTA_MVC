@@ -1,0 +1,80 @@
+﻿@model IEnumerable<ROTA_MVC.Models.EmployeeDto> 
+
+@{
+    ViewData["Title"] = "Manage Employees";
+}
+
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">@ViewData["Title"]</h1>
+     @if (User.IsInRole("Admin"))
+     {
+         <div class="btn-toolbar mb-2 mb-md-0">
+            <a asp-action="Create" class="btn btn-sm btn-primary">
+                 <i class="bi bi-plus-circle me-1"></i> Create New Employee
+             </a>
+        </div>
+     }
+</div>
+
+@* @if (TempData["SuccessMessage"] != null) { <div class="alert alert-success alert-dismissible fade show mb-4" role="alert">@TempData["SuccessMessage"]<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div> }
+ *@@if (TempData["ErrorMessage"] != null) { <div class="alert alert-danger alert-dismissible fade show mb-4" role="alert">@TempData["ErrorMessage"]<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div> }
+
+<div class="card shadow-sm"> @* Wrap table in a card for consistent background/shadow *@
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">Employee List</h5>
+        @* Optional: Add filter/search controls here later *@
+         <small class="text-muted">Showing @Model.Count() employees</small>
+    </div>
+    <div class="table-responsive"> @* Make table scroll horizontally on small screens *@
+        <table class="table table-hover table-striped mb-0"> @* Striped & Hover, remove bottom margin *@
+            <thead class="text-body-secondary small text-uppercase"> @* Material-like header *@
+                <tr>
+                    <th scope="col" class="ps-3">Name</th> @* Add padding start *@
+                    <th scope="col">Email</th>
+                    <th scope="col">Phone</th>
+                    <th scope="col">Team</th>
+                    <th scope="col" class="text-center">Status</th>
+                    <th scope="col" class="text-end pe-3">Actions</th> @* Add padding end *@
+                </tr>
+            </thead>
+            <tbody>
+                @if (!Model.Any())
+                {
+                    <tr><td colspan="7" class="text-center text-muted p-4"><i>No employees found.</i></td></tr>
+                }
+                @foreach (var item in Model)
+                {
+                    <tr class="@(item.IsActive ? "" : "opacity-75")"> @* Fade inactive employees slightly *@
+                        <td class="ps-3 align-middle">@item.FirstName @item.LastName</td>
+                        <td class="align-middle">
+                            @if (!string.IsNullOrWhiteSpace(item.Email)) {
+                                <a href="mailto:@item.Email">@item.Email</a>
+                            } else {
+                                <span class="text-muted">-</span>
+                            }
+                        </td>
+                        <td class="align-middle">@(string.IsNullOrWhiteSpace(item.PhoneNumber) ? Html.Raw("<span class='text-muted'>-</span>") : item.PhoneNumber)</td>
+                        <td class="align-middle">@(string.IsNullOrWhiteSpace(item.TeamName) ? Html.Raw("<span class='text-muted'>Unassigned</span>") : item.TeamName)</td>
+                        <td class="text-center align-middle">
+                             @if(item.IsActive) { <span class="badge bg-success-subtle text-success-emphasis rounded-pill">Active</span> }
+                             else { <span class="badge bg-danger-subtle text-danger-emphasis rounded-pill">Inactive</span> }
+                        </td>
+                        <td class="text-end pe-3 align-middle">
+                            @* Button Group for Actions *@
+                            <div class="btn-group btn-group-sm" role="group" aria-label="Employee Actions">
+                                <a asp-action="Details" asp-route-id="@item.EmployeeId" class="btn btn-outline-info" title="Details"><i class="bi bi-eye"></i></a>
+                                @if (User.IsInRole("Admin"))
+                                {
+                                    <a asp-action="Edit" asp-route-id="@item.EmployeeId" class="btn btn-outline-secondary" title="Edit"><i class="bi bi-pencil"></i></a>
+                                    <a asp-action="Delete" asp-route-id="@item.EmployeeId" class="btn btn-outline-danger" title="Delete"><i class="bi bi-trash3"></i></a>
+                                }
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div> @* End table-responsive *@
+     @* Optional: Add pagination controls here if implementing pagination *@
+     @* <div class="card-footer"> ... Pagination ... </div> *@
+</div> @* End Card *@

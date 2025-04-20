@@ -1,0 +1,83 @@
+﻿@model ROTA_MVC.Models.CreateEmployeeDto 
+
+@{
+    ViewData["Title"] = "Create New Employee";
+}
+
+@* Page Header *@
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">@ViewData["Title"]</h1>
+    <div>
+         <a asp-action="Index" class="btn btn-sm btn-outline-secondary">
+             <i class="bi bi-arrow-left me-1"></i> Back to Employee List
+         </a>
+    </div>
+</div>
+
+<div class="row justify-content-center"> @* Center the form column on larger screens *@
+    <div class="col-md-8 col-lg-7 col-xl-6"> @* Control the max width of the form card *@
+        <div class="card shadow-sm mb-4"> @* Wrap form in a card *@
+            <div class="card-body p-4"> @* Add padding *@
+                <h4 class="card-title mb-4">New Employee Details</h4>
+
+                <form asp-action="Create" method="post" novalidate>
+                    @Html.AntiForgeryToken()
+
+                    @* Display summary errors if any *@
+                    <div asp-validation-summary="ModelOnly" class="alert alert-danger mb-3" role="alert"></div>
+
+                    @* Use row/col for potentially two-column layout inside form *@
+                    <div class="row g-3">
+                        <div class="col-sm-6">
+                            <label asp-for="FirstName" class="form-label">First Name</label>
+                            <input asp-for="FirstName" class="form-control" placeholder="Enter first name" />
+                            <span asp-validation-for="FirstName" class="text-danger small d-block mt-1"></span> @* Smaller validation text *@
+                        </div>
+                        <div class="col-sm-6">
+                            <label asp-for="LastName" class="form-label">Last Name</label>
+                            <input asp-for="LastName" class="form-control" placeholder="Enter last name" />
+                            <span asp-validation-for="LastName" class="text-danger small d-block mt-1"></span>
+                        </div>
+
+                        <div class="col-12">
+                            <label asp-for="Email" class="form-label">Email Address</label>
+                            <input asp-for="Email" class="form-control" type="email" placeholder="name@example.com" />
+                            <span asp-validation-for="Email" class="text-danger small d-block mt-1"></span>
+                        </div>
+
+                        <div class="col-sm-6">
+                            <label asp-for="PhoneNumber" class="form-label">Phone Number</label>
+                            <input asp-for="PhoneNumber" class="form-control" placeholder="(Optional)" />
+                            <span asp-validation-for="PhoneNumber" class="text-danger small d-block mt-1"></span>
+                        </div>
+
+                        <div class="col-sm-6">
+                            <label asp-for="TeamId" class="form-label">Assign Team</label>
+                            <select asp-for="TeamId" class="form-select" asp-items="ViewBag.TeamList">
+                                <option value="">-- Unassigned --</option>
+                            </select>
+                            <span asp-validation-for="TeamId" class="text-danger small d-block mt-1"></span>
+                        </div>
+                    </div> @* End row for form fields *@
+
+                    <hr class="my-4"> @* Separator before buttons *@
+
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end"> @* Align buttons right on medium+ screens *@
+                        <a asp-action="Index" class="btn btn-outline-secondary px-4">Cancel</a>
+                        <button type="submit" class="btn btn-primary px-4">
+                            <i class="bi bi-person-plus-fill me-2"></i>Create Employee
+                        </button>
+                    </div>
+                </form>
+            </div> @* End Card Body *@
+        </div> @* End Card *@
+    </div> @* End Column *@
+</div> @* End Row *@
+
+
+@* Include client-side validation scripts *@
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}
