@@ -1,8 +1,8 @@
 🏛 About ROTA_MVC
 
-ROTA_MVC is a C# / ASP.NET MVC (or similar MVC-pattern) web application framework / project scaffold (or domain app) designed to support [describe your domain responsibilities — e.g. route management, rota scheduling, resource assignment, shift planning, etc.].
+ROTA_MVC is a C# / ASP.NET MVC web application framework / designed to support [responsibilities — e.g. route management, rota scheduling, resource assignment, shift planning, etc.].
 
-It blends Model-View-Controller architectural principles with domain logic aimed at solving problems around rota / scheduling / assignment workflows (or whatever "ROTA" stands for in your usage).
+It blends Model-View-Controller architectural principles with domain logic aimed at solving problems around rota / scheduling / assignment workflows.
 
 🎯 Objectives & Use Cases
 
@@ -22,9 +22,9 @@ From repository character:
 
 Primary language: C# (backend / domain)
 
-Web UI: HTML + CSS + likely Razor views / MVC Views
+Web UI: HTML + CSS + Razor views / MVC Views
 
-Possible JavaScript for interactivity (lightweight or SPA elements)
+JavaScript for interactivity (lightweight or SPA elements)
 
 Uses the MVC (Model-View-Controller) pattern for structuring responsibilities
 
